@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+* {
+    color: white
+}
+
+.fade {
+    transition: opacity 4s;
+    opacity: 0;
+  }
+  
+  .fade.show {
+    opacity: 1;
+  }
