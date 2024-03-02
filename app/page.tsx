@@ -3,18 +3,8 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+
 type Food = {
   id: number;
   name: string;
@@ -23,14 +13,15 @@ type Food = {
 };
 
 export default function Home() {
-  const [foodOne, setFoodOne] = useState<Food>();
-  const [foodTwo, setFoodTwo] = useState<Food | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState<Boolean>(false);
+  const [foodOne, setFoodOne] = useState<Food | null>(null);
+  const [foodTwo, setFoodTwo] = useState<Food | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [score, setScore] = useState<number>(0);
   const [highScore, setHighScore] = useState<number>(0);
+  const [loss, setLoss] = useState<boolean>(false);
 
   const fetchData = async (
-    setFood: React.Dispatch<React.SetStateAction<Food | undefined>>
+    setFood: React.Dispatch<React.SetStateAction<Food | null>>
   ) => {
     const apiKey = process.env.NEXT_PUBLIC_API_KEY;
     try {
@@ -53,7 +44,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchData(setFoodOne);
-    if (foodTwo == undefined) fetchData(setFoodTwo);
+    fetchData(setFoodTwo);
   }, []);
 
   const handleWin = () => {
@@ -71,33 +62,13 @@ export default function Home() {
   };
 
   const handleLoss = () => {
-    return (
-      <AlertDialog>
-        {/* <AlertDialogTrigger asChild>
-          <Button variant="outline">Show Dialog</Button>
-        </AlertDialogTrigger> */}
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete your
-              account and remove your data from our servers.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction
-              onClick={() => {
-                fetchData(setFoodOne);
-                fetchData(setFoodTwo);
-                setScore(0);
-              }}
-            >
-              Go again
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    );
+    setLoss(true);
+  };
+  const handleRestart = () => {
+    setScore(0);
+    setLoss(false);
+    fetchData(setFoodOne);
+    fetchData(setFoodTwo);
   };
 
   function handleClick(higher: boolean) {
@@ -122,6 +93,17 @@ export default function Home() {
 
   return (
     <main className="bg-[#210C1B] min-h-screen flex items-center justify-center">
+      {loss && (
+        <section className="text-center absolute bg-[#362432] w-[30vw] aspect-square flex flex-col items-center justify-center gap-10 rounded-xl opacity-[.98]">
+          <div>
+            <p className="text-xl ">Score: {score}</p>
+            <p className="text-xl ">High Score: {highScore}</p>
+          </div>
+          <Button className="px-10 py-6 " onClick={handleRestart}>
+            Try again
+          </Button>
+        </section>
+      )}
       <section className="flex flex-col  ">
         <h1 className="text-white font-extrabold text-center mb-10 text-3xl">
           CAL HIGHER LOWER
