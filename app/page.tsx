@@ -3,7 +3,18 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 type Food = {
   id: number;
   name: string;
@@ -18,7 +29,9 @@ export default function Home() {
   const [score, setScore] = useState<number>(0);
   const [highScore, setHighScore] = useState<number>(0);
 
-  const fetchData = async () => {
+  const fetchData = async (
+    setFood: React.Dispatch<React.SetStateAction<Food | undefined>>
+  ) => {
     const apiKey = process.env.NEXT_PUBLIC_API_KEY;
     try {
       const response = await axios.get(
@@ -27,28 +40,7 @@ export default function Home() {
       const nutritionValues = await axios.get(
         `https://api.spoonacular.com/recipes/${response.data.recipes[0].id}/nutritionWidget.json?apiKey=${apiKey}`
       );
-      setFoodOne({
-        id: response.data.recipes[0].id,
-        name: response.data.recipes[0].title,
-        imageUrl: response.data.recipes[0].image,
-        calories: nutritionValues.data.calories,
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const fetchDataTwo = async () => {
-    const apiKey = process.env.NEXT_PUBLIC_API_KEY;
-
-    try {
-      const response = await axios.get(
-        `https://api.spoonacular.com/recipes/random?apiKey=${apiKey}`
-      );
-      const nutritionValues = await axios.get(
-        `https://api.spoonacular.com/recipes/${response.data.recipes[0].id}/nutritionWidget.json?apiKey=${apiKey}`
-      );
-      setFoodTwo({
+      setFood({
         id: response.data.recipes[0].id,
         name: response.data.recipes[0].title,
         imageUrl: response.data.recipes[0].image,
@@ -60,53 +52,70 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchData();
-
-    if (foodTwo == undefined) fetchDataTwo();
+    fetchData(setFoodOne);
+    if (foodTwo == undefined) fetchData(setFoodTwo);
   }, []);
 
-  function HandleClick(higher: boolean) {
+  const handleWin = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setIsLoading(false);
+      setFoodOne(foodTwo);
+      fetchData(setFoodTwo);
+      setScore((prevScore) => {
+        const newScore = prevScore + 1;
+        if (newScore > highScore) setHighScore(newScore);
+        return newScore;
+      });
+    }, 1250);
+  };
+
+  const handleLoss = () => {
+    return (
+      <AlertDialog>
+        {/* <AlertDialogTrigger asChild>
+          <Button variant="outline">Show Dialog</Button>
+        </AlertDialogTrigger> */}
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your
+              account and remove your data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction
+              onClick={() => {
+                fetchData(setFoodOne);
+                fetchData(setFoodTwo);
+                setScore(0);
+              }}
+            >
+              Go again
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+  };
+
+  function handleClick(higher: boolean) {
     const calFoodOne = foodOne?.calories;
     const calFoodTwo = foodTwo?.calories;
     if (!calFoodOne || !calFoodTwo) return;
 
     if (higher) {
-      // win
       if (calFoodTwo >= calFoodOne) {
-        setIsLoading(true);
-        setTimeout(() => {
-          setIsLoading(false);
-          setFoodOne(foodTwo);
-          fetchDataTwo();
-          setScore((prevScore) => {
-            const newScore = prevScore + 1;
-            if (newScore > highScore) setHighScore(newScore);
-            return newScore;
-          });
-        }, 1250);
+        handleWin();
       } else {
-        fetchData();
-        fetchDataTwo();
-        setScore(0);
+        handleLoss();
       }
     } else if (!higher) {
-      // win
       if (calFoodTwo <= calFoodOne) {
-        setIsLoading(true);
-        setTimeout(() => {
-          setIsLoading(false);
-          setFoodOne(foodTwo);
-          fetchDataTwo();
-          setScore((prevScore) => {
-            const newScore = prevScore + 1;
-            if (newScore > highScore) setHighScore(newScore);
-            return newScore;
-          });
-        }, 1250);
+        handleWin();
       } else {
-        fetchData();
-        fetchDataTwo();
-        setScore(0);
+        handleLoss();
       }
     }
   }
@@ -168,6 +177,7 @@ export default function Home() {
                 )}
               </h1>
             </div>
+            {foodTwo?.calories}
             <div className={`flex justify-center gap-10 text-center mt-36`}>
               {isLoading ? (
                 <div className="border border-green-600 rounded-full py-5 px-16 font-bold text-3xl ">
@@ -176,13 +186,13 @@ export default function Home() {
               ) : (
                 <>
                   <button
-                    onClick={() => HandleClick(false)}
+                    onClick={() => handleClick(false)}
                     className="border border-red-600 rounded-full h-24 w-24 font-bold text-red-600 hover:opacity-50"
                   >
                     LOWER
                   </button>
                   <button
-                    onClick={() => HandleClick(true)}
+                    onClick={() => handleClick(true)}
                     className="border border-green-600 rounded-full h-24 w-24 font-bold text-green-600 hover:opacity-50"
                   >
                     HIGHER
