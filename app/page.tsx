@@ -159,7 +159,6 @@ export default function Home() {
                 )}
               </h1>
             </div>
-            {foodTwo?.calories}
             <div className={`flex justify-center gap-10 text-center mt-36`}>
               {isLoading ? (
                 <div className="border border-green-600 rounded-full py-5 px-16 font-bold text-3xl ">
